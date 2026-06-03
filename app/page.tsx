@@ -223,7 +223,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col bg-quokka-purple text-quokka-lavender font-nunito">
+    <main className="md:min-h-screen flex flex-col bg-quokka-purple text-quokka-lavender font-nunito">
 
       {/* ── DESKTOP ── */}
       <div className="hidden md:flex flex-col min-h-screen relative overflow-hidden">
@@ -271,7 +271,7 @@ export default function Home() {
       </div>
 
       {/* ── MOBILE ── */}
-      <div className="md:hidden flex flex-col min-h-screen relative overflow-hidden px-5 pt-10">
+      <div className="md:hidden flex flex-col h-dvh relative overflow-hidden px-5 pt-10">
         <div>
           <QuokkaLogo onLanded={handleLanded} />
           <div className="mt-1 mx-auto" style={{ maxWidth: "70vw" }}>
