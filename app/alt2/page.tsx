@@ -1,8 +1,8 @@
 "use client";
 
 import { motion } from "motion/react";
-import { useState } from "react";
-import { FaInstagram, FaLinkedinIn, FaEnvelope, FaPhone } from "react-icons/fa";
+import { useState, useEffect, useRef } from "react";
+import { FaInstagram, FaLinkedinIn } from "react-icons/fa";
 
 const TRANSFORM = "matrix(0.13333333,0,0,-0.13333333,0,333.33333)";
 
@@ -16,7 +16,7 @@ const LETTER_PATHS = [
 ];
 
 const EASE = [0.22, 1, 0.36, 1] as const;
-const CURVE_SPRING = { type: "spring" as const, stiffness: 300, damping: 11, mass: 0.9 };
+const CURVE_SPRING = { type: "spring" as const, stiffness: 300, damping: 14, mass: 0.9 };
 
 const FLAT_PATH   = "M 20,20 C 174,20 526,20 680,20";
 const CURVED_PATH = "M 20,20 C 174,245 526,245 680,20";
@@ -29,15 +29,20 @@ function fadeUp(delay: number, active: boolean, duration = 0.55) {
   };
 }
 
-// Logo slides up from below a clipped wrapper — no scale, no center start
 function QuokkaLogo({ onLanded }: { onLanded: () => void }) {
+  const onLandedRef = useRef(onLanded);
+  useEffect(() => {
+    // Fire 250ms before the logo animation ends (delay 0.15 + duration 0.9 − 0.25)
+    const t = setTimeout(() => onLandedRef.current(), 500);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <div className="overflow-hidden">
       <motion.div
         initial={{ y: "101%" }}
         animate={{ y: 0 }}
         transition={{ duration: 0.9, ease: EASE, delay: 0.15 }}
-        onAnimationComplete={onLanded}
       >
         <svg
           viewBox="130 74 1068 206"
@@ -60,142 +65,83 @@ function CurvedText({
   visible,
   curved,
   onCurveComplete,
-  uid,
-  rotateAmount = 8,
-  yOffset = -40,
 }: {
   visible: boolean;
   curved: boolean;
   onCurveComplete: () => void;
-  uid: string;
-  rotateAmount?: number;
-  yOffset?: number;
 }) {
-  const arcId = `textArc-${uid}`;
-  const clipId = `textWipe-${uid}`;
-
   return (
-    <motion.div
-      initial={{ rotate: rotateAmount, y: yOffset }}
-      animate={{ rotate: visible ? 0 : rotateAmount, y: visible ? 0 : yOffset }}
-      transition={{ delay: 0.2, duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-    >
-      <svg
-        viewBox="0 0 700 240"
-        xmlns="http://www.w3.org/2000/svg"
-        className="w-full h-auto"
-        aria-hidden="true"
-      >
-        <defs>
-          <motion.path
-            id={arcId}
-            fill="none"
-            initial={{ d: FLAT_PATH }}
-            animate={{ d: curved ? CURVED_PATH : FLAT_PATH }}
-            transition={curved ? CURVE_SPRING : { duration: 0 }}
-            onAnimationComplete={curved ? onCurveComplete : undefined}
-          />
-          <clipPath id={clipId}>
-            <motion.rect
-              x="0" y="-20" height="280"
-              initial={{ width: 0 }}
-              animate={{ width: visible ? 700 : 0 }}
-              transition={{ delay: 0.2, duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
-            />
-          </clipPath>
-        </defs>
-        <g clipPath={`url(#${clipId})`}>
-          <text
-            fill="#BBBEF6"
-            fontSize="40"
-            fontWeight="500"
-            fontFamily="Nunito, sans-serif"
-            letterSpacing="5"
-          >
-            <textPath href={`#${arcId}`} startOffset="50%" textAnchor="middle">
-              INTERIORS AND SPACES
-            </textPath>
-          </text>
-        </g>
-      </svg>
-    </motion.div>
-  );
-}
-
-function SocialIcon({
-  large = false,
-  children,
-}: {
-  large?: boolean;
-  children: React.ReactNode;
-}) {
-  const padding = large ? "p-3" : "p-2.5";
-  return (
-    <motion.span
-      className="relative overflow-hidden inline-block rounded-full bg-quokka-lavender text-quokka-purple cursor-pointer"
-      initial="rest"
-      whileHover="hover"
+    <svg
+      viewBox="0 0 700 240"
+      xmlns="http://www.w3.org/2000/svg"
+      className="w-full h-auto"
       aria-hidden="true"
     >
-      <motion.span
-        className={`flex items-center justify-center ${padding}`}
-        variants={{ rest: { y: "0%" }, hover: { y: "-100%" } }}
-        transition={{ duration: 0.35, ease: EASE }}
+      <defs>
+        <motion.path
+          id="textArcAlt2"
+          fill="none"
+          initial={{ d: FLAT_PATH }}
+          animate={{ d: curved ? CURVED_PATH : FLAT_PATH }}
+          transition={curved ? CURVE_SPRING : { duration: 0 }}
+          onAnimationComplete={curved ? onCurveComplete : undefined}
+        />
+        <clipPath id="textWipeAlt2">
+          <motion.rect
+            x="0" y="-20" height="280"
+            initial={{ width: 0 }}
+            animate={{ width: visible ? 700 : 0 }}
+            transition={{ delay: 0, duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+          />
+        </clipPath>
+      </defs>
+      <motion.g
+        clipPath="url(#textWipeAlt2)"
+        initial={{ rotate: 8, y: -50 }}
+        animate={{ rotate: visible ? 0 : 8, y: visible ? 0 : -50 }}
+        style={{ transformOrigin: "350px 120px" }}
+        transition={{ delay: 0, duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
       >
-        {children}
-      </motion.span>
-      <motion.span
-        className={`absolute inset-0 flex items-center justify-center ${padding}`}
-        variants={{ rest: { y: "100%" }, hover: { y: "0%" } }}
-        transition={{ duration: 0.35, ease: EASE }}
-      >
-        {children}
-      </motion.span>
-    </motion.span>
-  );
-}
-
-function ContactLink({
-  href,
-  icon,
-  label,
-  small = false,
-}: {
-  href: string;
-  icon: React.ReactNode;
-  label: string;
-  small?: boolean;
-}) {
-  return (
-    <motion.a
-      href={href}
-      className={`relative inline-flex items-center font-[600] md:font-bold tracking-wide ${small ? "text-base" : "text-lg"}`}
-      initial="rest"
-      whileHover="hover"
-    >
-      <motion.span
-        className="absolute left-0 flex items-center"
-        variants={{ rest: { opacity: 0, x: 0 }, hover: { opacity: 1, x: small ? -14 : -16 } }}
-        transition={{ duration: 0.35, ease: EASE }}
-      >
-        {icon}
-      </motion.span>
-      <motion.span
-        variants={{ rest: { x: 0 }, hover: { x: 4 } }}
-        transition={{ duration: 0.35, ease: EASE }}
-      >
-        {label}
-      </motion.span>
-    </motion.a>
+        <text
+          fill="#BBBEF6"
+          fontSize="40"
+          fontWeight="500"
+          fontFamily="Nunito, sans-serif"
+          letterSpacing="5"
+        >
+          <textPath href="#textArcAlt2" startOffset="50%" textAnchor="middle">
+            INTERIORS AND SPACES
+          </textPath>
+        </text>
+      </motion.g>
+    </svg>
   );
 }
 
 function InstagramIcon({ large = false }: { large?: boolean }) {
-  return <SocialIcon large={large}><FaInstagram size={large ? 40 : 28} /></SocialIcon>;
+  const size = large ? 40 : 28;
+  const padding = large ? "p-3" : "p-2.5";
+  return (
+    <span
+      className={`inline-flex items-center justify-center rounded-full bg-quokka-lavender text-quokka-purple ${padding}`}
+      aria-hidden="true"
+    >
+      <FaInstagram size={size} />
+    </span>
+  );
 }
 
 function LinkedInIcon({ large = false }: { large?: boolean }) {
-  return <SocialIcon large={large}><FaLinkedinIn size={large ? 40 : 28} /></SocialIcon>;
+  const size = large ? 40 : 28;
+  const padding = large ? "p-3" : "p-2.5";
+  return (
+    <span
+      className={`inline-flex items-center justify-center rounded-full bg-quokka-lavender text-quokka-purple ${padding}`}
+      aria-hidden="true"
+    >
+      <FaLinkedinIn size={size} />
+    </span>
+  );
 }
 
 function ConstructionNotice() {
@@ -215,55 +161,59 @@ export default function Home() {
   const [curved, setCurved] = useState(false);
   const [isFinal, setIsFinal] = useState(false);
 
-  // Logo lands → trigger smile + all final elements together
-  const handleLanded = () => {
-    setTextVisible(true);
-    setCurved(true);
-    setIsFinal(true);
-  };
+  // Fallback: if path-morph callback doesn't fire, force final after 3s
+  useEffect(() => {
+    if (!curved) return;
+    const t = setTimeout(() => setIsFinal(true), 3000);
+    return () => clearTimeout(t);
+  }, [curved]);
 
   return (
     <main className="min-h-screen flex flex-col bg-quokka-purple text-quokka-lavender font-nunito">
 
       {/* ── DESKTOP ── */}
       <div className="hidden md:flex flex-col min-h-screen relative overflow-hidden">
-        <motion.nav className="fixed bottom-8 right-8 z-10 flex items-center gap-8" {...fadeUp(0.3, isFinal)}>
-          <ContactLink href="mailto:hello@quokkainteriors.co.uk" icon={<FaEnvelope size={13} />} label="EMAIL" />
-          <ContactLink href="tel:07817292675" icon={<FaPhone size={13} />} label="PHONE" />
+        <motion.nav className="fixed bottom-8 right-8 z-10" {...fadeUp(0, isFinal)}>
+          <a
+            href="mailto:hello@quokkainteriors.com"
+            className="font-extrabold text-xl tracking-wide uppercase hover:opacity-70 transition-opacity"
+          >
+            Contact
+          </a>
         </motion.nav>
 
         <div className="flex-1 flex flex-col items-center justify-start py-12 px-8">
           <div className="w-full">
-            <QuokkaLogo onLanded={handleLanded} />
+            <QuokkaLogo onLanded={() => { setTextVisible(true); setCurved(true); }} />
           </div>
-          <div className="w-full mt-10" style={{ maxWidth: "60vw" }}>
+          <div className="w-full mt-2" style={{ maxWidth: "60vw" }}>
             <CurvedText
-              uid="desktop"
               visible={textVisible}
               curved={curved}
-              onCurveComplete={() => {}}
+              onCurveComplete={() => setIsFinal(true)}
             />
           </div>
         </div>
 
         <div className="px-8 pb-8">
-          <motion.div className="flex items-center gap-4" {...fadeUp(0.35, isFinal)}>
-            <a href="#" aria-label="Instagram">
+          <motion.div className="flex items-center gap-4" {...fadeUp(0.1, isFinal)}>
+            <a href="#" aria-label="Instagram" className="hover:opacity-70 transition-opacity">
               <InstagramIcon />
             </a>
-            <a href="#" aria-label="LinkedIn">
+            <a href="#" aria-label="LinkedIn" className="hover:opacity-70 transition-opacity">
               <LinkedInIcon />
             </a>
           </motion.div>
         </div>
 
+        {/* Banner is last — gated on isFinal with extra delay */}
         <motion.div
           className="absolute bottom-0 left-1/2 -translate-x-1/2"
           initial={{ opacity: 0, y: 100 }}
-          animate={{ opacity: 1, y: 30 }}
+          animate={isFinal ? { opacity: 1, y: 30 } : { opacity: 0, y: 100 }}
           transition={{
-            y: { delay: 0.4, duration: 0.9, ease: EASE },
-            opacity: { delay: 0.4, duration: 0.35 },
+            y: { delay: 0.25, type: "spring", stiffness: 260, damping: 16 },
+            opacity: { delay: 0.25, duration: 0.2 },
           }}
         >
           <ConstructionNotice />
@@ -273,26 +223,28 @@ export default function Home() {
       {/* ── MOBILE ── */}
       <div className="md:hidden flex flex-col min-h-screen relative overflow-hidden px-5 pt-10">
         <div>
-          <QuokkaLogo onLanded={handleLanded} />
+          <QuokkaLogo onLanded={() => { setTextVisible(true); setCurved(true); }} />
           <div className="mt-1 mx-auto" style={{ maxWidth: "70vw" }}>
             <CurvedText
-              uid="mobile"
               visible={textVisible}
               curved={curved}
-              onCurveComplete={() => {}}
+              onCurveComplete={() => setIsFinal(true)}
             />
           </div>
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-evenly pt-6 pb-40">
-          <motion.div className="flex items-center gap-10" {...fadeUp(0.3, isFinal)}>
-            <ContactLink href="mailto:hello@quokkainteriors.co.uk" icon={<FaEnvelope size={12} />} label="EMAIL" small />
-            <ContactLink href="tel:07817292675" icon={<FaPhone size={12} />} label="PHONE" small />
-          </motion.div>
-          <motion.a href="#" aria-label="Instagram" {...fadeUp(0.38, isFinal)}>
+          <motion.a
+            href="mailto:hello@quokkainteriors.com"
+            className="font-extrabold text-xl tracking-wide uppercase hover:opacity-70 transition-opacity"
+            {...fadeUp(0, isFinal)}
+          >
+            Contact
+          </motion.a>
+          <motion.a href="#" aria-label="Instagram" className="hover:opacity-70 transition-opacity" {...fadeUp(0.08, isFinal)}>
             <InstagramIcon large />
           </motion.a>
-          <motion.a href="#" aria-label="LinkedIn" {...fadeUp(0.46, isFinal)}>
+          <motion.a href="#" aria-label="LinkedIn" className="hover:opacity-70 transition-opacity" {...fadeUp(0.16, isFinal)}>
             <LinkedInIcon large />
           </motion.a>
         </div>
@@ -300,10 +252,10 @@ export default function Home() {
         <motion.div
           className="absolute bottom-0 w-full left-1/2 -translate-x-1/2"
           initial={{ opacity: 0, y: 80 }}
-          animate={{ opacity: 1, y: 20 }}
+          animate={isFinal ? { opacity: 1, y: 20 } : { opacity: 0, y: 80 }}
           transition={{
-            y: { delay: 0.5, duration: 0.9, ease: EASE },
-            opacity: { delay: 0.5, duration: 0.35 },
+            y: { delay: 0.25, type: "spring", stiffness: 260, damping: 16 },
+            opacity: { delay: 0.25, duration: 0.2 },
           }}
         >
           <ConstructionNotice />
